@@ -105,18 +105,19 @@ class tax {
    tinyint unsigned id
 }
 
-node9  -->  node5 : customer_id:id
-node5  -->  node8 : province:code
-node1  -->  item : item_id:id
-item  -->  node3 : kind_id:id
-item  -->  tax : tax_id:id
-orders  -->  node5 : customer_id:id
-orders  -->  payment_status : payment_status_id:id
-node7  -->  item : item_id:id
-node7  -->  orders : order_id:id
-orders_price_detail  -->  orders : order_id:id
-orders_price_detail  -->  tax : tax_id:id
-node0  -->  node9 : customer_creditcard:id
-node0  -->  orders : order_id:id
-node0  -->  node10 : payment_method:id
+
+node9  -->  node5 : customer_id
+node5  -->  node8 : province
+node1  -->  item : item_id
+item  -->  node3 : kind_id
+item  -->  tax : tax_id
+orders  -->  node5 : customer_id
+orders  -->  payment_status : payment_status_id
+node7  -->  item : item_id
+node7  -->  orders : order_id
+orders_price_detail  -->  orders : order_id
+orders_price_detail  -->  tax : tax_id
+node0  -->  node9 : customer_creditcard
+node0  -->  orders : order_id
+node0  -->  node10 : payment_method
 ```
