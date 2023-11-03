@@ -6,19 +6,6 @@ create table coupon
 )
     comment 'クーポン';
 
-create table customer_creditcard
-(
-    id                   int unsigned auto_increment
-        primary key,
-    customer_id          mediumint unsigned not null comment '顧客ID',
-    card_number          varchar(16)        not null comment 'カード番号(ハイフンなし)',
-    card_name            varchar(20)        not null comment 'カード名義人',
-    card_expire_month    decimal(2)         not null comment 'カード利用期限(月)',
-    card_expire_year     decimal(5)         not null comment 'カード利用期限(年)',
-    card_security_number decimal(3)         not null comment 'セキュリティ番号'
-)
-    comment '顧客が持つクレジットカード情報';
-
 create table item_kind
 (
     id         mediumint unsigned auto_increment
@@ -31,6 +18,12 @@ create table item_kind
     deleted_at datetime           null comment '削除日時'
 )
     comment '商品のカテゴリ';
+
+create table payment_history
+(
+    id int unsigned auto_increment
+        primary key
+);
 
 create table payment_method
 (
@@ -76,13 +69,55 @@ create table orders_price_detail
         foreign key (order_id) references orders (id)
 );
 
+create table prefecture
+(
+    code   decimal(2)  not null comment '都道府県コード'
+        primary key,
+    name   varchar(4)  not null comment '都道府県名',
+    ei_mei varchar(16) not null comment '英語名'
+)
+    comment '都道府県コードを管理';
+
+create table customers
+(
+    id         mediumint unsigned auto_increment
+        primary key,
+    name       varchar(64)  null comment '氏名',
+    first_name varchar(64)  null comment '名前',
+    last_name  varchar(64)  null comment '姓',
+    zip_code   varchar(7)   null comment '郵便番号(ハイフンなし)',
+    province   decimal(2)   null comment '都道府県コード',
+    city       varchar(128) null comment '町名',
+    address1   varchar(128) null comment '番地',
+    address2   varchar(128) null comment '番地以降(ビル・アパート名など)',
+    tel        varchar(16)  null comment '電話番号(-ハイフンなし)',
+    constraint customers_prefecture_code_fk
+        foreign key (province) references prefecture (code)
+)
+    comment '顧客(注文した人の情報を管理)';
+
+create table customer_creditcard
+(
+    id                   int unsigned auto_increment
+        primary key,
+    customer_id          mediumint unsigned not null comment '顧客ID',
+    card_number          varchar(16)        not null comment 'カード番号(ハイフンなし)',
+    card_name            varchar(20)        not null comment 'カード名義人',
+    card_expire_month    decimal(2)         not null comment 'カード利用期限(月)',
+    card_expire_year     decimal(5)         not null comment 'カード利用期限(年)',
+    card_security_number decimal(3)         not null comment 'セキュリティ番号',
+    constraint customer_creditcard_customers_id_fk
+        foreign key (customer_id) references customers (id)
+)
+    comment '顧客が持つクレジットカード情報';
+
 create table payment_detail
 (
     id                  mediumint unsigned auto_increment
         primary key,
     order_id            int unsigned     not null comment '注文番号',
     payment_method      tinyint unsigned not null comment '決済方法',
-    customer_creditcard int unsigned     not null,
+    customer_creditcard int unsigned     not null comment 'クレジットカード',
     constraint payment_detail_customer_creditcard_id_fk
         foreign key (customer_creditcard) references customer_creditcard (id),
     constraint payment_detail_orders_id_fk
@@ -91,33 +126,6 @@ create table payment_detail
         foreign key (payment_method) references payment_method (id)
 )
     comment '決済情報の詳細を格納(クレジットカード情報など)';
-
-create table prefecture
-(
-    code   tinyint unsigned not null comment '都道府県コード'
-        primary key,
-    name   varchar(4)       not null comment '都道府県名',
-    ei_mei varchar(16)      not null comment '英語名'
-)
-    comment '都道府県コードを管理';
-
-create table customers
-(
-    id         mediumint unsigned auto_increment
-        primary key,
-    name       varchar(64)      null comment '氏名',
-    first_name varchar(64)      null comment '名前',
-    last_name  varchar(64)      null comment '姓',
-    zip_code   varchar(7)       null comment '郵便番号(ハイフンなし)',
-    province   tinyint unsigned null comment '都道府県コード',
-    city       varchar(128)     null comment '町名',
-    address1   varchar(128)     null comment '番地',
-    address2   varchar(128)     null comment '番地以降(ビル・アパート名など)',
-    tel        varchar(16)      null comment '電話番号(-ハイフンなし)',
-    constraint customers_prefecture_code_fk
-        foreign key (province) references prefecture (code)
-)
-    comment '顧客(注文した人の情報を管理)';
 
 create table tax
 (
@@ -149,6 +157,20 @@ create table item
         foreign key (tax_id) references tax (id)
 );
 
+create table cart
+(
+    id          int unsigned auto_increment
+        primary key,
+    customer_id mediumint unsigned             not null comment '顧客ID',
+    item_id     mediumint unsigned             null comment '商品ID',
+    count       mediumint unsigned default '1' not null comment '個数',
+    constraint cart_customers_id_fk
+        foreign key (customer_id) references customers (id),
+    constraint cart_item_id_fk
+        foreign key (item_id) references item (id)
+)
+    comment '買い物カート';
+
 create table inventory
 (
     id          mediumint unsigned auto_increment
@@ -177,8 +199,11 @@ create table orders_detail
         unique (order_id_branch),
     constraint orders_detail_item_id_fk
         foreign key (item_id) references item (id),
-    constraint orders_detail_item_id_fk2
-        foreign key (item_id) references item (id)
+    constraint orders_detail_orders_id_fk
+        foreign key (order_id) references orders (id)
 )
     comment '　';
+
+create index orders_detail_item_id_fk2
+    on orders_detail (item_id);
 
